@@ -1,11 +1,7 @@
 
 argparse = require 'argparse'
-ffmpeg = require 'ffmpeg-static'
 pack = require "./pack.js"
-
-# Retrieve images from a video
-unpack = (src, dest)->
-  console.log "unpacking", src, dest
+unpack = require "./unpack.js"
 
 parser = new argparse.ArgumentParser
   version: "1.0.0"
@@ -19,5 +15,7 @@ parser.addArgument ["-q", "--quality"], {type:"int", help: "Quality of output. L
 
 args = parser.parseArgs()
 switch args.Method
-  when "pack" then pack args.Source, args.Output, args.quality
-  when "unpack" then unpack args.Source, args.Output, args.quality
+  when "pack" then pack args.Source, args.Output, args.quality, (err)->
+    console.error err if err
+  when "unpack" then unpack args.Source, args.Output, args.quality, (err)->
+    console.error err if err
