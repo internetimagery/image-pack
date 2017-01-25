@@ -23,4 +23,5 @@ parser.addArgument ["-q", "--quality"], {type:"int" ,help: "Quality of output. L
 
 
 args = parser.parseArgs()
+console.log args.Method
 console.log args
