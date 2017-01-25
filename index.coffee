@@ -5,11 +5,11 @@ ffmpeg = require 'ffmpeg-static'
 # Pack images into a video file
 pack = (src, dest, crf)->
   crf = crf or 18 # Default quality value
-  console.log src, dest
+  console.log "packing", src, dest
 
 # Retrieve images from a video
 unpack = (src, dest)->
-  console.log src, dest
+  console.log "unpacking", src, dest
 
 parser = new argparse.ArgumentParser
   version: "1.0.0"
@@ -21,7 +21,7 @@ parser.addArgument ["Source"], {type:"string" ,help: "Pack: Image or Folder of i
 parser.addArgument ["Output"], {type:"string" ,help: "Pack: Video file. Unpack: Empty folder."}
 parser.addArgument ["-q", "--quality"], {type:"int" ,help: "Quality of output. Lower number is higher quality."}
 
-
 args = parser.parseArgs()
-console.log args.Method
-console.log args
+switch args.Method
+  when "pack" then pack args.Source, args.Output, args.quality
+  when "unpack" then unpack args.Source, args.Output, args.quality
