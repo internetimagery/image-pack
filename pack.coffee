@@ -2,6 +2,10 @@
 path = require 'path'
 fs = require 'fs'
 
+# Get height/width
+# ffprobe -of json -v error -show_entries stream=width,height test\image.jpg
+# vendor\ffmpeg-3.2.2-win64-static\bin
+
 # Pack images into a video file
 module.exports = (src, dest, crf, callback)->
   crf = crf or 18 # Default quality value
