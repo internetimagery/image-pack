@@ -14,7 +14,7 @@ ALLOWED_EXT = [".jpg", ".jpeg"]
 # FFPROBE = path.join FFMPEG_ROOT, "ffprobe.exe"
 
 # Gather metadata from images
-generate_metadata = (images, callback)->
+gather_metadata = (images, callback)->
   extract = /\d{2,}x\d{2,}/
   data = []
   i = images.length
@@ -36,10 +36,34 @@ generate_metadata = (images, callback)->
         else
           return callback new Error "Bad file: #{img}"
 
+# Create Temporary folder nearby
+
+# Link all files into the folder, using sequential naming
+# run ffmpeg command to compress a video
+archive = (root, images, callback)->
+  # Gather intel
+  # TODO: add in a check for rotatable images. ie height > width
+  max_width = 0
+  max_height = 0
+  for img in images
+    max_width = Math.max max_width, img.width
+    max_height = Math.max max_height, img.height
+
+  for img in images
+    do (img)->
+
+  index = 0
+  padding = images.length.toString().length
+
+
+
+# Run ffmpeg command
+# ffmpeg -i INPUT.jpg -crf 18 -c:v libx265 -vf pad="w=999:h=999" OUTPUT.mp4
+
 
 # Pack images into a video file
-module.exports = (src, dest, crf, callback)->
-  crf = crf or 18 # Default quality value
+module.exports = (src, dest, options, callback)->
+  options.crf = options.crf or 18 # Default quality value
   console.log "packing", src, dest
 
   # Determine what we're using as a source.
@@ -49,10 +73,11 @@ module.exports = (src, dest, crf, callback)->
       # If a directory, collect files within.
       fs.readdir src, (err, files)->
         imgs = (f for f in files when fs.statSync(f).isFile() and path.extname(f) in ALLOWED_EXT)
-        console.log imgs
+        gather_metadata imgs, (err)->
+          console.error err if err
     else if stats.isFile()
       if path.extname(src) in ALLOWED_EXT
-        generate_metadata [src], (err)->
+        gather_metadata [src], (err)->
           console.error err if err
     else
       return callback new Error "Unrecognised input."
