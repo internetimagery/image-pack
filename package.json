@@ -1,0 +1,23 @@
+{
+  "name": "image-pack",
+  "version": "1.0.0",
+  "description": "Pack images into a video.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/internetimagery/image-pack.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/internetimagery/image-pack/issues"
+  },
+  "homepage": "https://github.com/internetimagery/image-pack#readme",
+  "dependencies": {
+    "argparse": "^1.0.9",
+    "ffmpeg-static": "^2.0.0"
+  }
+}
