@@ -41,6 +41,8 @@ gather_metadata = (images, callback)->
 # Link all files into the folder, using sequential naming
 # run ffmpeg command to compress a video
 archive = (root, images, callback)->
+  # Get temporary file created.
+
   # Gather intel
   # TODO: add in a check for rotatable images. ie height > width
   max_width = 0
@@ -48,6 +50,8 @@ archive = (root, images, callback)->
   for img in images
     max_width = Math.max max_width, img.width
     max_height = Math.max max_height, img.height
+    o_path = path.join root, img.name
+    # Link file!
 
   for img in images
     do (img)->
