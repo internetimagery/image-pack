@@ -36,9 +36,8 @@ gather_metadata = (images, callback)->
         else
           return callback new Error "Bad file: #{img}"
 
-# Create Temporary folder nearby
 
-# Link all files into the folder, using sequential naming
+# Link all files into a temp folder, using sequential naming
 # run ffmpeg command to compress a video
 archive = (root, metadata, callback)->
   # Create a temporary file to work in.
@@ -48,17 +47,33 @@ archive = (root, metadata, callback)->
     # Gather intel
     max_width = 0
     max_height = 0
-    for data in metadata
-      # Collect the maximum size of our video
-      if data.rotate
-        max_width = Math.max max_width, data.height
-        max_height = Math.max max_height, data.width
-      else
-        max_width = Math.max max_width, data.width
-        max_height = Math.max max_height, data.height
+    padding = metadata.length.toString().length()
+    i = metadata.length
+    for data, j in metadata
+      do (data, j)->
+        # Collect the maximum size of our video
+        if data.rotate
+          max_width = Math.max max_width, data.height
+          max_height = Math.max max_height, data.width
+        else
+          max_width = Math.max max_width, data.width
+          max_height = Math.max max_height, data.height
 
-    console.log max_width, max_height
-    console.log metadata
+        # Get index in string!
+        num_str = j.toString()
+
+        # Rebuild paths
+        o_path = path.join root, data.name
+        w_path = path.join working, "0".repeat(padding - num_str.length) + num_str + ".jpg"
+
+        console.log o_path
+        console.log w_path
+        console.log "=".repeat 10
+
+        # fs.link o_path, w_path, (err)->
+        #   return callback err if err
+
+
       # o_path = path.join root, img.name
       # Link file!
   #
