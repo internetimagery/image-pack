@@ -19,7 +19,7 @@ cwd = process.cwd()
 source = path.join cwd, args.Source
 output = path.join cwd, args.Output
 switch args.Method
-  when "pack" then pack source, output, args.quality, (err)->
+  when "pack" then pack source, output, {}, (err)->
     console.error err if err
-  when "unpack" then unpack source, output, args.quality, (err)->
+  when "unpack" then unpack source, output, {}, (err)->
     console.error err if err

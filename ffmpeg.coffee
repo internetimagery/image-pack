@@ -40,7 +40,16 @@ module.exports.dimensions = (src, callback)->
     callback new Error "Bad file: #{img}"
 
 # Run a ffmpeg compression
-module.exports.compress = (src, dest, filters, callback)->
-  console.log "compressing", src, dest, filters
+module.exports.compress = (src, dest, options = {}, callback)->
+  command = [
+    "-i", src,
+    "-crf", options.crf or 18, # Quality
+    "-an", # No audio
+    "-vf", if options.vfilter then options.vfilter.join "," else "null"
+    "-c:v", "libx265" # Compression method
+    dest
+    ]
+  console.log command
+
   callback null
   # child_process.execFile ffmpeg.path,

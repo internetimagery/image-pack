@@ -35,7 +35,7 @@ gather_metadata = (images, callback)->
 
 # Link all files into a temp folder, using sequential naming
 # run ffmpeg command to compress a video
-archive = (root, metadata, callback)->
+archive = (root, metadata, options, callback)->
   # Create a temporary file to work in.
   temp.mkdir {dir: root}, (err, working)->
     return callback err if err
@@ -67,8 +67,9 @@ archive = (root, metadata, callback)->
 
           wait -= 1
           if not wait # Continue!
-            console.log "DONE"
-            console.log metadata
+            out = path.join working, "test.mp4"
+            ffmpeg.compress path.join(working, "%#{padding}d.jpg"), out, options, (err)->
+              console.log "DONE"
 
 
 
@@ -78,8 +79,8 @@ archive = (root, metadata, callback)->
 
 
 # Pack images into a video file
-module.exports = (src, dest, options, callback)->
-  # options.crf = options.crf or 18 # Default quality value
+module.exports = (src, dest, options = {}, callback)->
+  options.crf = options.crf or 18 # Default quality value
 
   # Determine what we're using as a source.
   fs.stat src, (err, stats)->
@@ -91,7 +92,7 @@ module.exports = (src, dest, options, callback)->
         imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f) in ALLOWED_EXT)
         gather_metadata imgs, (err, meta)->
           return callback err if err
-          archive src, meta, (err)->
+          archive src, meta, options, (err)->
             callback err
     else if stats.isFile()
       if path.extname(src) in ALLOWED_EXT
@@ -99,7 +100,7 @@ module.exports = (src, dest, options, callback)->
           return callback err if err
           # Get the enclosing folder of the image
           root = path.dirname src
-          archive root, meta, (err)->
+          archive root, meta, options, (err)->
             callback err
     else
       return callback new Error "Unrecognised input."
