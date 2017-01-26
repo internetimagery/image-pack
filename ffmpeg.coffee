@@ -11,7 +11,7 @@ child_process = require 'child_process'
 
 
 # Build an expression to run evaluation on specific frames
-module.exports.frame_expression = (frames, command)->
+frame_expression = (frames, command)->
   # If we have some frames, lets make an enormous expression
   if frames.length
     frame_cmd = ("eq(n,#{f})" for f in frames).join "+"
@@ -28,6 +28,7 @@ module.exports.rotate = (degrees, frames)->
 
 # Pad out smaller frames with black bars
 module.exports.pad = (width, height)->
+  # return "pad"
   return "pad='w=#{width}:h=#{height}'"
 
 # Get dimensions from an image / video
@@ -42,14 +43,14 @@ module.exports.dimensions = (src, callback)->
 # Run a ffmpeg compression
 module.exports.compress = (src, dest, options = {}, callback)->
   command = [
-    "-i", src,
-    "-crf", options.crf or 18, # Quality
-    "-an", # No audio
+    "-y" # Override output
+    "-i", src
+    "-crf", options.crf or 18 # Quality
+    "-an" # No audio
     "-vf", if options.vfilter then options.vfilter.join "," else "null"
     "-c:v", "libx265" # Compression method
     dest
     ]
-  console.log command
-
-  callback null
-  # child_process.execFile ffmpeg.path,
+  console.log "Running command:", command.join " "
+  child_process.execFile ffmpeg.path, command, {cwd: options.cwd or process.cwd()}, (err, stdout)->
+    callback err
