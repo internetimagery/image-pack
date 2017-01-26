@@ -18,6 +18,7 @@
   "homepage": "https://github.com/internetimagery/image-pack#readme",
   "dependencies": {
     "argparse": "^1.0.9",
-    "ffmpeg-static": "^2.0.0"
+    "ffmpeg-static": "^2.0.0",
+    "temp": "^0.8.3"
   }
 }

@@ -1,5 +1,6 @@
 
 argparse = require 'argparse'
+path = require 'path'
 pack = require "./pack.js"
 unpack = require "./unpack.js"
 
@@ -14,8 +15,11 @@ parser.addArgument ["Output"], {type:"string", help: "Pack: Video file. Unpack: 
 parser.addArgument ["-q", "--quality"], {type:"int", help: "Quality of output. Lower number is higher quality."}
 
 args = parser.parseArgs()
+cwd = process.cwd()
+source = path.join cwd, args.Source
+output = path.join cwd, args.Output
 switch args.Method
-  when "pack" then pack args.Source, args.Output, args.quality, (err)->
+  when "pack" then pack source, output, args.quality, (err)->
     console.error err if err
-  when "unpack" then unpack args.Source, args.Output, args.quality, (err)->
+  when "unpack" then unpack source, output, args.quality, (err)->
     console.error err if err
