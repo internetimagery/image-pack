@@ -47,7 +47,7 @@ archive = (root, metadata, callback)->
     # Gather intel
     max_width = 0
     max_height = 0
-    padding = metadata.length.toString().length()
+    padding = metadata.length.toString().length
     i = metadata.length
     for data, j in metadata
       do (data, j)->
@@ -59,19 +59,19 @@ archive = (root, metadata, callback)->
           max_width = Math.max max_width, data.width
           max_height = Math.max max_height, data.height
 
-        # Get index in string!
+        # Get index in string form!
         num_str = j.toString()
 
         # Rebuild paths
         o_path = path.join root, data.name
         w_path = path.join working, "0".repeat(padding - num_str.length) + num_str + ".jpg"
 
-        console.log o_path
-        console.log w_path
-        console.log "=".repeat 10
+        fs.link o_path, w_path, (err)->
+          return callback err if err
 
-        # fs.link o_path, w_path, (err)->
-        #   return callback err if err
+          i -= 1
+          if i == 0
+            console.log "DONE"
 
 
       # o_path = path.join root, img.name
