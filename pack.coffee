@@ -97,12 +97,7 @@ archive = (root, metadata, options, callback)->
                 console.log err
                 console.log "DONE"
 
-
-
-
-# Run ffmpeg command
-# ffmpeg -i INPUT.jpg -crf 18 -c:v libx265 -vf pad="w=999:h=999" OUTPUT.mp4
-
+# TODO: Check output file for validation
 
 # Pack images into a video file
 module.exports = (src, dest, options = {}, callback)->
