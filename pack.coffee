@@ -2,8 +2,8 @@
 path = require 'path'
 fs = require 'fs'
 temp = require 'temp'
-ffmpeg = require 'ffmpeg-static'
 child_process = require 'child_process'
+ffmpeg = require "./ffmpeg_util.js"
 
 # Automatically remove temporary directory when tool is done
 temp.track()
@@ -13,29 +13,25 @@ ALLOWED_EXT = [".jpg", ".jpeg"]
 
 # Gather metadata from images
 gather_metadata = (images, callback)->
-  extract = /\d{2,}x\d{2,}/
   data = []
-  i = images.length
+  wait = images.length
   for img in images
     do (img)->
-      child_process.execFile ffmpeg.path, ["-i", img], (err)->
-        i -= 1
-        meta = extract.exec err.message
-        if meta?
-          dimensions = meta[0].split "x"
+      ffmpeg.dimensions img, (err, dimensions)->
+        if err
+          callback err
+        else
           data.push {
             name: path.basename img
             width: dimensions[0]
             height: dimensions[1]
             rotate: if dimensions[1] > dimensions[0] then true else false
           }
-          if i == 0 # We have checked everything
-            # Sort the files in order
-            callback null, data.sort (a, b)->
-              a.name > b.name
-        else
-          return callback new Error "Bad file: #{img}"
-
+        wait -= 1
+        if not wait # We have checked everything
+          # Sort the files in order
+          callback null, data.sort (a, b)->
+            a.name > b.name
 
 # Link all files into a temp folder, using sequential naming
 # run ffmpeg command to compress a video
@@ -48,9 +44,9 @@ archive = (root, metadata, callback)->
     max_width = 0
     max_height = 0
     padding = metadata.length.toString().length
-    i = metadata.length
-    for data, j in metadata
-      do (data, j)->
+    wait = metadata.length
+    for data, i in metadata
+      do (data, i)->
         # Collect the maximum size of our video
         if data.rotate
           max_width = Math.max max_width, data.height
@@ -60,7 +56,7 @@ archive = (root, metadata, callback)->
           max_height = Math.max max_height, data.height
 
         # Get index in string form!
-        num_str = j.toString()
+        num_str = i.toString()
 
         # Rebuild paths
         o_path = path.join root, data.name
@@ -69,19 +65,11 @@ archive = (root, metadata, callback)->
         fs.link o_path, w_path, (err)->
           return callback err if err
 
-          i -= 1
-          if i == 0
+          wait -= 1
+          if not wait # Continue!
             console.log "DONE"
+            console.log metadata
 
-
-      # o_path = path.join root, img.name
-      # Link file!
-  #
-  # for img in images
-  #   do (img)->
-  #
-  # index = 0
-  # padding = images.length.toString().length
 
 
 
