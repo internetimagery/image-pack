@@ -1,7 +1,6 @@
 # Pack images into a video file!
 
 fs = require 'fs'
-jimp = require 'jimp'
 temp = require 'temp'
 path = require 'path'
 ora = require 'ora'

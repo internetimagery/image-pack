@@ -4,7 +4,11 @@
   "description": "Pack jpeg images into a video and back.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Sorry: no test specified :(\" && exit 1"
+    "test": "echo \"Sorry: no test specified :(\" && exit 1",
+    "build": "gulp"
+  },
+  "bin": {
+    "imagepack": "./bin/imagepack"
   },
   "repository": {
     "type": "git",
@@ -21,5 +25,9 @@
     "ffmpeg-static": "^2.0.0",
     "ora": "^1.1.0",
     "temp": "^0.8.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-coffee": "^2.3.3"
   }
 }

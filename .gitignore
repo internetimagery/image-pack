@@ -1,6 +1,6 @@
 # Project specific
 test
-*.js
+src/**/*.js
 
 # Created by https://www.gitignore.io/api/win,windows,osx,linux,node
 

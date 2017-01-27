@@ -1,3 +1,4 @@
+# Command line functionality!
 
 argparse = require 'argparse'
 path = require 'path'
