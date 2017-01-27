@@ -1,6 +1,6 @@
 {
   "name": "photopack",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Pack jpeg images into a video and back.",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "gulp"
   },
   "bin": {
-    "imagepack": "./bin/photopack"
+    "photopack": "./bin/photopack"
   },
   "repository": {
     "type": "git",
