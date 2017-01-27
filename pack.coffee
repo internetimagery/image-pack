@@ -105,29 +105,37 @@ archive = (root, metadata, options, callback)->
 module.exports = (src, dest, options = {}, callback)->
   options.crf = options.crf or 18 # Default quality value
 
-  # Determine what we're using as a source.
-  fs.stat src, (err, stats)->
-    return callback err if err # Expecting "ENOENT" if not valid path
-    if stats.isDirectory()
-      # If a directory, collect files within.
-      fs.readdir src, (err, files)->
-        # Get full path names
-        imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f) in ALLOWED_EXT)
-        gather_metadata imgs, (err, meta)->
-          return callback err if err
-          spinner = ora("Packing images.").start()
-          archive src, meta, options, (err)->
-            if err then spinner.fail() else spinner.succeed()
-            callback err
-    else if stats.isFile()
-      if path.extname(src) in ALLOWED_EXT
-        gather_metadata [src], (err, meta)->
-          return callback err if err
-          # Get the enclosing folder of the image
-          root = path.dirname src
-          spinner = ora("Packing image.").start()
-          archive root, meta, options, (err)->
-            if err then spinner.fail() else spinner.succeed()
-            callback err
-    else
-      return callback new Error "Unrecognised input."
+  # Quickly check our output file is accurate
+  return callback new Error "Output needs to be an mp4 file" if path.extname(dest) != ".mp4"
+
+  # Check what we're using as an output.
+  fs.stat dest, (err, stat)->
+    return callback new Error "Destination file exists already." if not err
+    return callback err if err and err != "ENOENT"
+
+    # Determine what we're using as a source.
+    fs.stat src, (err, stats)->
+      return callback err if err # Expecting "ENOENT" if not valid path
+      if stats.isDirectory()
+        # If a directory, collect files within.
+        fs.readdir src, (err, files)->
+          # Get full path names
+          imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f) in ALLOWED_EXT)
+          gather_metadata imgs, (err, meta)->
+            return callback err if err
+            spinner = ora("Packing images.").start()
+            archive src, meta, options, (err)->
+              if err then spinner.fail() else spinner.succeed()
+              callback err
+      else if stats.isFile()
+        if path.extname(src) in ALLOWED_EXT
+          gather_metadata [src], (err, meta)->
+            return callback err if err
+            # Get the enclosing folder of the image
+            root = path.dirname src
+            spinner = ora("Packing image.").start()
+            archive root, meta, options, (err)->
+              if err then spinner.fail() else spinner.succeed()
+              callback err
+      else
+        return callback new Error "Unrecognised input."
