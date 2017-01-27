@@ -8,8 +8,7 @@
     "build": "gulp"
   },
   "bin": {
-    "imagepack": "./bin/imagepack",
-    "imagepackwin": "./bin/imagepack.bat"
+    "imagepack": "./bin/imagepack"
   },
   "repository": {
     "type": "git",
@@ -28,6 +27,7 @@
     "temp": "^0.8.3"
   },
   "devDependencies": {
+    "cmd-shim": "^2.0.2",
     "gulp": "^3.9.1",
     "gulp-coffee": "^2.3.3"
   }
