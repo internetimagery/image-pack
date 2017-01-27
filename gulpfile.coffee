@@ -1,5 +1,6 @@
 # Prepare to run!
 
+path = require 'path'
 gulp = require 'gulp'
 coffee = require 'gulp-coffee'
 

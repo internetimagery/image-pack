@@ -1,5 +1,7 @@
 (function() {
-  var coffee, gulp;
+  var coffee, gulp, path;
+
+  path = require('path');
 
   gulp = require('gulp');
 

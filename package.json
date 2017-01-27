@@ -8,7 +8,8 @@
     "build": "gulp"
   },
   "bin": {
-    "imagepack": "./bin/imagepack"
+    "imagepack": "./bin/imagepack",
+    "imagepackwin": "./bin/imagepack.bat"
   },
   "repository": {
     "type": "git",
