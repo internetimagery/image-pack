@@ -6,8 +6,11 @@ child_process = require 'child_process'
 ora = require 'ora'
 ffmpeg = require "./ffmpeg.js"
 
+# TODO: Rotating photos to conserve space resets frame count every time a new stream
+# TODO: is selected. This occurrs every time the input size changes (ie a rotated photo)
+
 # Automatically remove temporary directory when tool is done
-# temp.track()
+temp.track()
 
 # Restrict us to jpegs for now
 ALLOWED_EXT = [".jpg", ".jpeg"]
@@ -35,71 +38,63 @@ gather_metadata = (images, callback)->
 
 # Link all files into a temp folder, using sequential naming
 # run ffmpeg command to compress a video
-# TODO: Rotating photos to conserve space resets frame count every time a new stream
-# TODO: is selected. This occurrs every time the input size changes (ie a rotated photo)
-archive = (root, metadata, options, callback)->
+archive = (root, output, metadata, options, callback)->
   return callback null if not metadata.length
 
-  # Create a temporary file to work in.
-  temp.mkdir {dir: root}, (err, working)->
+  # make an index file of images
+  concat = ("file '#{f.name}'" for f in metadata).join "\n"
+  temp.open {dir: root}, (err, info)->
     return callback err if err
+    fs.writeFile info.fd, concat, "utf8", (err)->
+      return callback err if err
 
-    # Discover orientation
-    if metadata[0].width < metadata[0].height
-      # Portrait
-      rotate = (wid, hgt)->
-        wid > hgt
-    else
-      # Landscape
-      rotate = (wid, hgt)->
-        wid < hgt
+      # Discover orientation
+      # if metadata[0].width < metadata[0].height
+      #   # Portrait
+      #   rotate = (wid, hgt)->
+      #     wid > hgt
+      # else
+      #   # Landscape
+      #   rotate = (wid, hgt)->
+      #     wid < hgt
 
-    # Gather intel
-    max_width = 0
-    max_height = 0
-    padding = metadata.length.toString().length
-    wait = metadata.length
-    for data, i in metadata
-      do (data, i)->
+      # Gather intel
+      max_width = 0
+      max_height = 0
+      for data in metadata
         # Add rotational info
         # data.rotate = rotate data.width, data.height
 
         # Collect the maximum size of our video
-        if false #data.rotate
-          max_width = Math.max max_width, data.height
-          max_height = Math.max max_height, data.width
-        else
+        # if data.rotate
+        #   max_width = Math.max max_width, data.height
+        #   max_height = Math.max max_height, data.width
+        # else
           max_width = Math.max max_width, data.width
           max_height = Math.max max_height, data.height
 
-        # Get index in string form!
-        num_str = i.toString()
+      # Swap .mp4 with .index to make our index file
+      index_path = output.substr(0, output.length - path.extname(output).length) + ".index"
+      # Ensure index file doesn't already exist!
+      fs.access index_path, (err)->
+        return callback new Error "Index file exists: #{path.basename index_path}" if not err
+        return callback err if err and err.code != "ENOENT"
+        # Make the index file!
+        fs.writeFile index_path, JSON.stringify(metadata, null, 2), (err)->
+          if err # Problem? Cleanup!
+            return fs.unlink index_path, ()->
+              callback err
 
-        # Rebuild paths
-        o_path = path.join root, data.name
-        w_path = path.join working, "0".repeat(padding - num_str.length) + num_str + ".jpg"
+          # Set our video filters
+          options.vfilter = [
+            ffmpeg.pad max_width, max_height
+            # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
+          ]
+          options.cwd = root
 
-        fs.link o_path, w_path, (err)->
-          return callback err if err
-
-          wait -= 1
-          if not wait # Continue!
-            img_sequence = "%#{padding}d.jpg"
-            options.cwd = working # Set our tempfile
-            options.vfilter = [# Input our settings
-              ffmpeg.pad max_width, max_height
-              # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
-            ]
-            pack_file = "pack.mp4"
-            meta_file = "pack.index"
-            # Run compression
-            ffmpeg.compress "%#{padding}d.jpg", pack_file, options, (err)->
-              return callback err if err
-              # Save our index of image names and sizes
-              fs.writeFile path.join(working, meta_file), JSON.stringify(metadata, null, 2), (err)->
-                return callback err if err
-
-# TODO: Check output file for validation
+          # Run compression
+          ffmpeg.compress info.path, output, options, (err)->
+            callback err
 
 # Pack images into a video file
 module.exports = (src, dest, options = {}, callback)->
@@ -109,9 +104,9 @@ module.exports = (src, dest, options = {}, callback)->
   return callback new Error "Output needs to be an mp4 file" if path.extname(dest) != ".mp4"
 
   # Check what we're using as an output.
-  fs.stat dest, (err, stat)->
+  fs.access dest, (err)->
     return callback new Error "Destination file exists already." if not err
-    return callback err if err and err != "ENOENT"
+    return callback err if err and err.code != "ENOENT"
 
     # Determine what we're using as a source.
     fs.stat src, (err, stats)->
@@ -124,7 +119,7 @@ module.exports = (src, dest, options = {}, callback)->
           gather_metadata imgs, (err, meta)->
             return callback err if err
             spinner = ora("Packing images.").start()
-            archive src, meta, options, (err)->
+            archive src, dest, meta, options, (err)->
               if err then spinner.fail() else spinner.succeed()
               callback err
       else if stats.isFile()
@@ -134,7 +129,7 @@ module.exports = (src, dest, options = {}, callback)->
             # Get the enclosing folder of the image
             root = path.dirname src
             spinner = ora("Packing image.").start()
-            archive root, meta, options, (err)->
+            archive root, dest, meta, options, (err)->
               if err then spinner.fail() else spinner.succeed()
               callback err
       else
