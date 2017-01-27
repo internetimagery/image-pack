@@ -96,6 +96,7 @@
             }
             options.vfilter = [ffmpeg.pad(max_width, max_height)];
             options.cwd = root;
+            options.comment = JSON.stringify(metadata);
             return ffmpeg.compress(info.path, output, options, function(err) {
               return callback(err);
             });

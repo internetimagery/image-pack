@@ -45,6 +45,7 @@ module.exports.compress = (src, dest, options = {}, callback)->
     "-i", src
     "-crf", options.crf or 18 # Quality
     "-an" # No audio
+    "-metadata", "comment=#{options.comment or ""}"
     "-vf", if options.vfilter then options.vfilter.join "," else "null"
     "-c:v", "libx265" # Compression method
     dest

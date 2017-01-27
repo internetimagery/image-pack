@@ -91,6 +91,7 @@ archive = (root, output, metadata, options, callback)->
             # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
           ]
           options.cwd = root
+          options.comment = JSON.stringify metadata # Stuff our info into metadata
 
           # Run compression
           ffmpeg.compress info.path, output, options, (err)->

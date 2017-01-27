@@ -52,7 +52,7 @@
     if (options == null) {
       options = {};
     }
-    command = ["-y", "-f", "concat", "-safe", 0, "-i", src, "-crf", options.crf || 18, "-an", "-vf", options.vfilter ? options.vfilter.join(",") : "null", "-c:v", "libx265", dest];
+    command = ["-y", "-f", "concat", "-safe", 0, "-i", src, "-crf", options.crf || 18, "-an", "-metadata", "comment=" + (options.comment || ""), "-vf", options.vfilter ? options.vfilter.join(",") : "null", "-c:v", "libx265", dest];
     return child_process.execFile(ffmpeg.path, command, {
       cwd: options.cwd || process.cwd()
     }, function(err, stdout) {
