@@ -101,7 +101,7 @@ module.exports = (src, dest, options = {}, callback)->
   options.crf = options.crf or 18 # Default quality value
 
   # Quickly check our output file is accurate
-  return callback new Error "Output needs to be an mp4 file" if path.extname(dest) != ".mp4"
+  return callback new Error "Output needs to be an mp4 file" if path.extname(dest).toLowerCase() != ".mp4"
 
   # Check what we're using as an output.
   fs.access dest, (err)->
@@ -115,7 +115,7 @@ module.exports = (src, dest, options = {}, callback)->
         # If a directory, collect files within.
         fs.readdir src, (err, files)->
           # Get full path names
-          imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f) in ALLOWED_EXT)
+          imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f).toLowerCase() in ALLOWED_EXT)
           gather_metadata imgs, (err, meta)->
             return callback err if err
             spinner = ora("Packing images.").start()
@@ -123,7 +123,7 @@ module.exports = (src, dest, options = {}, callback)->
               if err then spinner.fail() else spinner.succeed()
               callback err
       else if stats.isFile()
-        if path.extname(src) in ALLOWED_EXT
+        if path.extname(src).toLowerCase() in ALLOWED_EXT
           gather_metadata [src], (err, meta)->
             return callback err if err
             # Get the enclosing folder of the image

@@ -4,9 +4,10 @@ argparse = require 'argparse'
 path = require 'path'
 pack = require "./pack.js"
 unpack = require "./unpack.js"
+data = require "../package.json"
 
 parser = new argparse.ArgumentParser
-  version: "0.1.4"
+  version: data.version
   addHelp: true
   description: "Compress images into and out of a video."
 
@@ -19,6 +20,7 @@ args = parser.parseArgs()
 cwd = process.cwd()
 source = path.resolve cwd, args.Source
 output = path.resolve cwd, args.Output
+
 
 switch args.Method
   when "pack" then pack source, output, {crf: args.quality}, (err)->

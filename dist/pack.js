@@ -110,7 +110,7 @@
       options = {};
     }
     options.crf = options.crf || 18;
-    if (path.extname(dest) !== ".mp4") {
+    if (path.extname(dest).toLowerCase() !== ".mp4") {
       return callback(new Error("Output needs to be an mp4 file"));
     }
     return fs.access(dest, function(err) {
@@ -142,7 +142,7 @@
               results = [];
               for (i = 0, len = ref.length; i < len; i++) {
                 f = ref[i];
-                if (fs.statSync(f).isFile() && (ref1 = path.extname(f), indexOf.call(ALLOWED_EXT, ref1) >= 0)) {
+                if (fs.statSync(f).isFile() && (ref1 = path.extname(f).toLowerCase(), indexOf.call(ALLOWED_EXT, ref1) >= 0)) {
                   results.push(f);
                 }
               }
@@ -165,7 +165,7 @@
             });
           });
         } else if (stats.isFile()) {
-          if (ref = path.extname(src), indexOf.call(ALLOWED_EXT, ref) >= 0) {
+          if (ref = path.extname(src).toLowerCase(), indexOf.call(ALLOWED_EXT, ref) >= 0) {
             return gather_metadata([src], function(err, meta) {
               var root, spinner;
               if (err) {

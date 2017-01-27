@@ -1,5 +1,5 @@
 (function() {
-  var argparse, args, cwd, output, pack, parser, path, source, unpack;
+  var argparse, args, cwd, data, output, pack, parser, path, source, unpack;
 
   argparse = require('argparse');
 
@@ -9,8 +9,10 @@
 
   unpack = require("./unpack.js");
 
+  data = require("../package.json");
+
   parser = new argparse.ArgumentParser({
-    version: "0.1.4",
+    version: data.version,
     addHelp: true,
     description: "Compress images into and out of a video."
   });
