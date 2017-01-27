@@ -31,5 +31,5 @@ Unpack command accepts an mp4 file as input. If a .index file of the same name i
 To compile all files with gulp, simply run gulp in the project, or run the below:
 
 ```
-npm run build
+npm install && npm run build
 ```
