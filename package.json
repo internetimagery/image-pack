@@ -1,6 +1,6 @@
 {
   "name": "photopack",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Pack jpeg images into a video and back.",
   "main": "index.js",
   "scripts": {

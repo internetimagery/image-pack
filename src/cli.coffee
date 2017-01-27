@@ -6,7 +6,7 @@ pack = require "./pack.js"
 unpack = require "./unpack.js"
 
 parser = new argparse.ArgumentParser
-  version: "0.1.3"
+  version: "0.1.4"
   addHelp: true
   description: "Compress images into and out of a video."
 
@@ -17,8 +17,8 @@ parser.addArgument ["-q", "--quality"], {type:"int", help: "Quality of output. L
 
 args = parser.parseArgs()
 cwd = process.cwd()
-source = path.join cwd, args.Source
-output = path.join cwd, args.Output
+source = path.resolve cwd, args.Source
+output = path.resolve cwd, args.Output
 
 switch args.Method
   when "pack" then pack source, output, {crf: args.quality}, (err)->

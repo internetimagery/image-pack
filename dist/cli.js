@@ -10,7 +10,7 @@
   unpack = require("./unpack.js");
 
   parser = new argparse.ArgumentParser({
-    version: "1.0.0",
+    version: "0.1.4",
     addHelp: true,
     description: "Compress images into and out of a video."
   });
@@ -40,9 +40,9 @@
 
   cwd = process.cwd();
 
-  source = path.join(cwd, args.Source);
+  source = path.resolve(cwd, args.Source);
 
-  output = path.join(cwd, args.Output);
+  output = path.resolve(cwd, args.Output);
 
   switch (args.Method) {
     case "pack":

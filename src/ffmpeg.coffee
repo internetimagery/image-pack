@@ -41,6 +41,7 @@ module.exports.compress = (src, dest, options = {}, callback)->
   command = [
     "-y" # Override output
     "-f", "concat" # File type, list of files
+    "-safe", 0
     "-i", src
     "-crf", options.crf or 18 # Quality
     "-an" # No audio
