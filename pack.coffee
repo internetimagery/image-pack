@@ -37,64 +37,66 @@ gather_metadata = (images, callback)->
 # TODO: Rotating photos to conserve space resets frame count every time a new stream
 # TODO: is selected. This occurrs every time the input size changes (ie a rotated photo)
 archive = (root, metadata, options, callback)->
-  if metadata.length
-    # Create a temporary file to work in.
-    temp.mkdir {dir: root}, (err, working)->
-      return callback err if err
+  return callback null if not metadata.length
 
-      # Discover orientation
-      if metadata[0].width < metadata[0].height
-        # Portrait
-        rotate = (wid, hgt)->
-          wid > hgt
-      else
-        # Landscape
-        rotate = (wid, hgt)->
-          wid < hgt
+  # Create a temporary file to work in.
+  temp.mkdir {dir: root}, (err, working)->
+    return callback err if err
 
-      # Gather intel
-      max_width = 0
-      max_height = 0
-      padding = metadata.length.toString().length
-      wait = metadata.length
-      for data, i in metadata
-        do (data, i)->
-          # Add rotational info
-          # data.rotate = rotate data.width, data.height
+    # Discover orientation
+    if metadata[0].width < metadata[0].height
+      # Portrait
+      rotate = (wid, hgt)->
+        wid > hgt
+    else
+      # Landscape
+      rotate = (wid, hgt)->
+        wid < hgt
 
-          # Collect the maximum size of our video
-          if false #data.rotate
-            max_width = Math.max max_width, data.height
-            max_height = Math.max max_height, data.width
-          else
-            max_width = Math.max max_width, data.width
-            max_height = Math.max max_height, data.height
+    # Gather intel
+    max_width = 0
+    max_height = 0
+    padding = metadata.length.toString().length
+    wait = metadata.length
+    for data, i in metadata
+      do (data, i)->
+        # Add rotational info
+        # data.rotate = rotate data.width, data.height
 
-          # Get index in string form!
-          num_str = i.toString()
+        # Collect the maximum size of our video
+        if false #data.rotate
+          max_width = Math.max max_width, data.height
+          max_height = Math.max max_height, data.width
+        else
+          max_width = Math.max max_width, data.width
+          max_height = Math.max max_height, data.height
 
-          # Rebuild paths
-          o_path = path.join root, data.name
-          w_path = path.join working, "0".repeat(padding - num_str.length) + num_str + ".jpg"
+        # Get index in string form!
+        num_str = i.toString()
 
-          fs.link o_path, w_path, (err)->
-            return callback err if err
+        # Rebuild paths
+        o_path = path.join root, data.name
+        w_path = path.join working, "0".repeat(padding - num_str.length) + num_str + ".jpg"
 
-            wait -= 1
-            if not wait # Continue!
-              img_sequence = "%#{padding}d.jpg"
-              options.cwd = working # Set our tempfile
-              options.vfilter = [# Input our settings
-                ffmpeg.pad max_width, max_height
-                # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
-              ]
-              pack_file = "pack.mp4"
-              # Run compression
-              ffmpeg.compress "%#{padding}d.jpg", pack_file, options, (err)->
+        fs.link o_path, w_path, (err)->
+          return callback err if err
+
+          wait -= 1
+          if not wait # Continue!
+            img_sequence = "%#{padding}d.jpg"
+            options.cwd = working # Set our tempfile
+            options.vfilter = [# Input our settings
+              ffmpeg.pad max_width, max_height
+              # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
+            ]
+            pack_file = "pack.mp4"
+            meta_file = "pack.index"
+            # Run compression
+            ffmpeg.compress "%#{padding}d.jpg", pack_file, options, (err)->
+              return callback err if err
+              # Save our index of image names and sizes
+              fs.writeFile path.join(working, meta_file), JSON.stringify(metadata, null, 2), (err)->
                 return callback err if err
-                s_path = path.join dest
-                fs.link
-                console.log err
                 console.log "DONE"
 
 # TODO: Check output file for validation

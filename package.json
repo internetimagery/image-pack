@@ -19,6 +19,7 @@
   "dependencies": {
     "argparse": "^1.0.9",
     "ffmpeg-static": "^2.0.0",
+    "jimp": "^0.2.27",
     "temp": "^0.8.3"
   }
 }
