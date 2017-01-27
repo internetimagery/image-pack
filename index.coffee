@@ -18,8 +18,9 @@ args = parser.parseArgs()
 cwd = process.cwd()
 source = path.join cwd, args.Source
 output = path.join cwd, args.Output
+
 switch args.Method
-  when "pack" then pack source, output, {}, (err)->
+  when "pack" then pack source, output, {crf: args.quality}, (err)->
     console.error err if err
   when "unpack" then unpack source, output, {}, (err)->
     console.error err if err

@@ -3,6 +3,7 @@ path = require 'path'
 fs = require 'fs'
 temp = require 'temp'
 child_process = require 'child_process'
+ora = require 'ora'
 ffmpeg = require "./ffmpeg.js"
 
 # Automatically remove temporary directory when tool is done
@@ -97,7 +98,6 @@ archive = (root, metadata, options, callback)->
               # Save our index of image names and sizes
               fs.writeFile path.join(working, meta_file), JSON.stringify(metadata, null, 2), (err)->
                 return callback err if err
-                console.log "DONE"
 
 # TODO: Check output file for validation
 
@@ -115,7 +115,9 @@ module.exports = (src, dest, options = {}, callback)->
         imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f) in ALLOWED_EXT)
         gather_metadata imgs, (err, meta)->
           return callback err if err
+          spinner = ora("Packing images.").start()
           archive src, meta, options, (err)->
+            if err then spinner.fail() else spinner.succeed()
             callback err
     else if stats.isFile()
       if path.extname(src) in ALLOWED_EXT
@@ -123,7 +125,9 @@ module.exports = (src, dest, options = {}, callback)->
           return callback err if err
           # Get the enclosing folder of the image
           root = path.dirname src
+          spinner = ora("Packing image.").start()
           archive root, meta, options, (err)->
+            if err then spinner.fail() else spinner.succeed()
             callback err
     else
       return callback new Error "Unrecognised input."
