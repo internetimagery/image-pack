@@ -47,6 +47,29 @@
     });
   };
 
+  module.exports.comments = function(src, options, callback) {
+    var command;
+    if (options == null) {
+      options = {};
+    }
+    command = ["-v", "error", "-i", src, "-f", "ffmetadata", "pipe:1"];
+    return child_process.execFile(ffmpeg.path, command, {
+      cwd: options.cwd || process.cwd()
+    }, function(err, stdout) {
+      var scan;
+      if (err) {
+        return callback(err);
+      }
+      try {
+        scan = /comment=(.+?)\n/.exec(stdout);
+        return callback(null, JSON.parse(scan[2]));
+      } catch (error) {
+        err = error;
+        return callback(err);
+      }
+    });
+  };
+
   module.exports.compress = function(src, dest, options, callback) {
     var command;
     if (options == null) {

@@ -36,6 +36,19 @@ module.exports.dimensions = (src, callback)->
       return callback null, meta[0].split "x"
     callback new Error "Bad file: #{img}"
 
+# Get the comments metadata from a file, if any
+module.exports.comments = (src, options = {}, callback)->
+  command = [
+    "-v", "error" # Quiet the output on stdout
+    "-i", src
+    "-f", "ffmetadata" # We want just the metadata
+    "pipe:1" # Funnel the metadata into stdout
+  ]
+  child_process.execFile ffmpeg.path, command, {cwd: options.cwd or process.cwd()}, (err, stdout)->
+    return callback err if err
+    scan = /comment=(.+?)\n/.exec(stdout)
+    if scan then callback null, scan[2] else callback new Error "Could not gather metadata"
+
 # Run a ffmpeg compression
 module.exports.compress = (src, dest, options = {}, callback)->
   command = [

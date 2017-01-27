@@ -1,8 +1,11 @@
+# TODO: Add more file types. bmp, png at least. concat should handle them
+# TODO: change file structure of metadata to put the filename as key, and height/width as array following
+# TODO: add optional scale param for exporting images
+
 # Pack images into a video file!
 path = require 'path'
 fs = require 'fs'
 temp = require 'temp'
-child_process = require 'child_process'
 ora = require 'ora'
 ffmpeg = require "./ffmpeg.js"
 

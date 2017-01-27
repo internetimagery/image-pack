@@ -41,6 +41,10 @@
   };
 
   module.exports = function(src, dest, options, callback) {
+    ffmpeg.comments(src, options, function(err, metadata) {
+      return callback(null);
+    });
+    return callback(null);
     return fs.stat(dest, function(err, stats) {
       if (err) {
         return callback(err);
