@@ -1,17 +1,17 @@
 {
   "name": "image-pack",
-  "version": "1.0.0",
-  "description": "Pack images into a video.",
+  "version": "0.1.0",
+  "description": "Pack jpeg images into a video and back.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Sorry: no test specified :(\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/internetimagery/image-pack.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Jason Dixon",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/internetimagery/image-pack/issues"
   },
@@ -19,7 +19,6 @@
   "dependencies": {
     "argparse": "^1.0.9",
     "ffmpeg-static": "^2.0.0",
-    "jimp": "^0.2.27",
     "ora": "^1.1.0",
     "temp": "^0.8.3"
   }

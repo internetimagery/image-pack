@@ -28,7 +28,7 @@ module.exports = (src, dest, options, callback)->
     return callback new Error "Destination needs to be a directory." if not stats.isDirectory()
 
     # Create a temporary file to work in
-    temp.mkdir {dir: path.dirname src}, (err, working)->
+    temp.mkdir {dir: dest}, (err, working)->
       return callback err if err
 
       # Extract images into the tempfile
