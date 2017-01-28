@@ -15,7 +15,7 @@ ffmpeg = require "./ffmpeg.js"
 # TODO: is selected. This occurrs every time the input size changes (ie a rotated photo)
 
 # Automatically remove temporary directory when tool is done
-# temp.track()
+temp.track()
 
 # Allowed file types
 IMG_EXT = [".jpg", ".jpeg"]
@@ -41,66 +41,6 @@ gather_metadata = (images, callback)->
           # Sort the files in order
           callback null, data.sort (a, b)->
             a.name > b.name
-
-# # Taking in a concatenation file, listing inputs
-# # create a single video to compress the lot!
-# archive = (src, dest, metadata, options, callback)->
-#
-#   # make an index file of images
-#   concat = ("file '#{f.name}'" for f in metadata).join "\n"
-#   temp.open {dir: root}, (err, info)->
-#     return callback err if err
-#     fs.writeFile info.fd, concat, "utf8", (err)->
-#       return callback err if err
-#
-#       # Discover orientation
-#       # if metadata[0].width < metadata[0].height
-#       #   # Portrait
-#       #   rotate = (wid, hgt)->
-#       #     wid > hgt
-#       # else
-#       #   # Landscape
-#       #   rotate = (wid, hgt)->
-#       #     wid < hgt
-#
-#       # Gather intel
-#       max_width = 0
-#       max_height = 0
-#       for data in metadata
-#         # Add rotational info
-#         # data.rotate = rotate data.width, data.height
-#
-#         # Collect the maximum size of our video
-#         # if data.rotate
-#         #   max_width = Math.max max_width, data.height
-#         #   max_height = Math.max max_height, data.width
-#         # else
-#           max_width = Math.max max_width, data.width
-#           max_height = Math.max max_height, data.height
-#
-#       # Swap .mp4 with .index to make our index file
-#       index_path = output.substr(0, output.length - path.extname(output).length) + ".index"
-#       # Ensure index file doesn't already exist!
-#       fs.access index_path, (err)->
-#         return callback new Error "Index file exists: #{path.basename index_path}" if not err
-#         return callback err if err and err.code != "ENOENT"
-#         # Make the index file!
-#         fs.writeFile index_path, JSON.stringify(metadata, null, 2), (err)->
-#           if err # Problem? Cleanup!
-#             return fs.unlink index_path, ()->
-#               callback err
-#
-#           # Set our video filters
-#           options.vfilter = [
-#             ffmpeg.pad max_width, max_height
-#             # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
-#           ]
-#           options.cwd = root
-#           options.comment = JSON.stringify metadata # Stuff our info into metadata
-#
-#           # Run compression
-#           ffmpeg.compress info.path, output, options, (err)->
-#             callback err
 
 # Walk paths pulling out files
 collect_files = (root, recursive, callback)->
