@@ -1,5 +1,7 @@
 # ffmpeg functionality
 
+ini = require 'ini'
+path = require 'path'
 ffmpeg = require "ffmpeg-static"
 child_process = require 'child_process'
 
@@ -36,18 +38,17 @@ module.exports.dimensions = (src, options={}, callback)->
       return callback null, meta[0].split "x"
     callback new Error "Bad file: #{src}"
 
-# Get the comments metadata from a file, if any
-module.exports.comments = (src, options = {}, callback)->
+# Get metadata from a video / image / thing
+module.exports.metadata = (src, options={}, callback)->
   command = [
-    "-v", "error" # Quiet the output on stdout
+    "-v", "error" # Quiet on the stdout front!
     "-i", src
-    "-f", "ffmetadata" # We want just the metadata
-    "pipe:1" # Funnel the metadata into stdout
+    "-f", "ffmetadata"
+    "pipe:1" # Funnel output into stdout
   ]
   child_process.execFile ffmpeg.path, command, {cwd: options.cwd or process.cwd()}, (err, stdout)->
     return callback err if err
-    scan = /comment=(.+?)\n/.exec(stdout)
-    if scan then callback null, scan[2] else callback new Error "Could not gather metadata"
+    return callback null, ini.parse stdout
 
 # Run a ffmpeg compression
 module.exports.compress = (src, dest, options = {}, callback)->
@@ -69,13 +70,17 @@ module.exports.compress = (src, dest, options = {}, callback)->
     callback err
 
 # Pull images back out of compression
-module.exports.extract = (src, dest, options = {}, callback)->
-  command = [
-    "-y" # Override files if they are there
-    "-i", src
-    dest
-  ]
-  # console.log "Running command: ffmpeg", command.join " "
+module.exports.extract = (src, dest, options={}, callback)->
+  # Grab our input
+  input = ["-y", "-i", src]
+  filter = if options.vfilter then ["-vf", ("#{k}=#{v}" for k, v of options.vfilter).join(",")] else []
+  # Format our output to provide max quality
+  output = switch path.extname(dest).toLowerCase()
+    when ".jpg" then ["-qmin", 1, "-qmax", 1, "-qscale", 1, dest]
+    when ".jpeg" then ["-qmin", 1, "-qmax", 1, "-qscale", 1, dest]
+    else [dest]
+  command = input.concat filter.concat output
+  # # console.log "Running command: ffmpeg", command.join " "
   child_process.execFile ffmpeg.path, command, {cwd: options.cwd or process.cwd()}, (err, stdout)->
     callback err
 

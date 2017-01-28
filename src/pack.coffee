@@ -102,6 +102,7 @@ module.exports = (src, dest, options = {}, callback)->
               temp.open {dir: src, suffix: ".ffcat"}, (err, info)->
                 return callback err if err
                 concat_data = ("file #{p.replace /([^\w])/g, "\\$1"}" for p in photos).join("\n")
+                console.log concat_data
                 fs.writeFile info.fd, concat_data, "utf8", (err)->
                   return callback err if err
 

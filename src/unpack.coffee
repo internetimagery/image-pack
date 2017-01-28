@@ -6,9 +6,11 @@ path = require 'path'
 ora = require 'ora'
 ffmpeg = require "./ffmpeg.js"
 
-
 # Auto delete tempfile
 temp.track()
+
+IMG_EXT = [".jpg", ".jpeg"]
+VID_EXT = [".mp4"]
 
 # https://coffeescript-cookbook.github.io/chapters/arrays/zip-function
 # Usage: zip(arr1, arr2, arr3, ...)
@@ -21,6 +23,37 @@ zip = () ->
 
 # Pack images into a video file
 module.exports = (src, dest, options, callback)->
+  options.cwd = dest # Working in the destination directory
+
+  # Check our destination is a folder, and exists.
+  # Check source exists also and is allowed format.
+  fs.stat dest, (err, stats)->
+    return callback err if err
+    return callback new Error "Destination needs to be a directory" if not stats.isDirectory()
+    return callback new Error "Source needs to be a video of format: " + VID_EXT.join " " if path.extname(src).toLowerCase() not in VID_EXT
+
+    # Attempt to get metadata.
+    # If we have metadata, then extract frames into a temp folder in lossless bmp format, then crop into original structure
+    # If we don't have metadata. Damn. Got nothing to go off, so just pull frames out in a sequence.
+    ffmpeg.metadata src, options, (err, metadata)->
+      return callback err if err
+      try
+        index_data = JSON.parse metadata.comment
+      catch err
+        return callback err if err.name != "SyntaxError"
+
+        # We have no metadata. Nothing we can do but just extract the frames in a numbered sequence.
+        ffmpeg.extract src, "%9d.jpg", options, (err)->
+          return callback err if err
+          console.log "done"
+
+
+
+
+  return
+
+
+
   # Ensure destination is a folder
   fs.stat dest, (err, stats)->
     return callback err if err
