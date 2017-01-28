@@ -24,7 +24,8 @@
     "argparse": "^1.0.9",
     "ffmpeg-static": "^2.0.0",
     "ora": "^1.1.0",
-    "temp": "^0.8.3"
+    "temp": "^0.8.3",
+    "walk": "^2.3.9"
   },
   "devDependencies": {
     "gulp": "^3.9.1",

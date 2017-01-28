@@ -7,6 +7,7 @@ path = require 'path'
 fs = require 'fs'
 temp = require 'temp'
 ora = require 'ora'
+walk = require 'walk'
 ffmpeg = require "./ffmpeg.js"
 
 # TODO: Rotating photos to conserve space resets frame count every time a new stream
@@ -15,8 +16,9 @@ ffmpeg = require "./ffmpeg.js"
 # Automatically remove temporary directory when tool is done
 temp.track()
 
-# Restrict us to jpegs for now
-ALLOWED_EXT = [".jpg", ".jpeg"]
+# Allowed file types
+IMG_EXT = [".jpg", ".jpeg"]
+VID_EXT = [".mp4"]
 
 # Gather metadata from images
 gather_metadata = (images, callback)->
@@ -100,9 +102,55 @@ archive = (root, output, metadata, options, callback)->
           ffmpeg.compress info.path, output, options, (err)->
             callback err
 
+# Walk paths pulling out files
+collect_files = (root, recursive, callback)->
+  if recursive
+    files = []
+    walker = walk.walk root
+    walker.on "file", (root, stat, next)->
+      files.push path.join root, stat.name
+      next()
+    walker.on "errors", (root, stats, next)->
+      callback stats
+    walker.on "end", ()->
+      callback null, files
+  else
+    fs.readdir root, (err, files)->
+      return callback err if err
+      callback null, (f for f in files when fs.statSync(path.join(root, f)).isFile())
+
+
 # Pack images into a video file
 module.exports = (src, dest, options = {}, callback)->
-  options.crf = options.crf or 18 # Default quality value
+
+  # Ensure src is a directory, and exists.
+  # Ensure dest is a mp4 file, and does not exist.
+  fs.stat src, (err, stats)->
+    return callback err if err
+    return callback new Error "Source needs to be a Directory." if not stats.isDirectory()
+    return callback new Error "Destination already exists." if fs.existsSync dest
+    return callback new Error "Destination needs to be a video file of format: " + VID_EXT.join " " if path.extname(dest).toLowerCase() not in VID_EXT
+
+    # Grab all files from the directory source
+    # Then shortlist them into relevant ones (with ext in IMG_EXT)
+    # Finally make the paths relative
+    collect_files src, options.recursive or false, (err, files)->
+      return callback err if err
+      photos = (path.relative(src, f) for f in files when path.extname(f).toLowerCase() in IMG_EXT)
+
+      # Convert paths to forward slashes if on windows
+      # Also remove drive letters if on windows
+      photos = (p.replace /\\/g, "/" for p in photos)
+      photos = (p.replace /^\w:/, "" for p in photos)
+
+      console.log photos
+
+
+
+  return
+
+
+
 
   # Quickly check our output file is accurate
   return callback new Error "Output needs to be an mp4 file" if path.extname(dest).toLowerCase() != ".mp4"
