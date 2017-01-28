@@ -2,6 +2,7 @@
 
 argparse = require 'argparse'
 path = require 'path'
+ora = require 'ora'
 pack = require "./pack.js"
 unpack = require "./unpack.js"
 data = require "../package.json"
@@ -24,10 +25,18 @@ output = path.resolve cwd, args.Output
 
 
 switch args.Method
-  when "pack" then pack source, output, {
+  when "pack"
+    spinner = ora("Packing images.")
+    pack source, output, {
       crf: args.quality
       recursive: args.recursive
       }, (err)->
-    console.error err if err
-  when "unpack" then unpack source, output, {}, (err)->
-    console.error err if err
+        if err then spinner.fail() else spinner.succeed()
+        console.error err if err
+  when "unpack"
+    spinner = ora("Unpacking images.")
+    unpack source, output, {
+
+      }, (err)->
+        if err then spinner.fail() else spinner.succeed()
+        console.error err if err

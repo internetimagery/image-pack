@@ -107,14 +107,14 @@ archive = (root, output, metadata, options, callback)->
 collect_files = (root, recursive, callback)->
   if recursive
     files = []
-    walker = walk.walk root
-    walker.on "file", (root, stat, next)->
-      files.push path.join root, stat.name
-      next()
-    walker.on "errors", (root, stats, next)->
-      callback stats
-    walker.on "end", ()->
-      callback null, files
+    walk.walk root
+        .on "file", (root, stat, next)->
+          files.push path.join root, stat.name
+          next()
+        .on "errors", (root, stats, next)->
+          callback stats
+        .on "end", ()->
+          callback null, files
   else
     fs.readdir root, (err, files)->
       return callback err if err
@@ -161,7 +161,6 @@ module.exports = (src, dest, options = {}, callback)->
               # Store the metadata for insertion into video later
               # Using node package to ensure the filenames remain in order
               photo_metadata_json = stringify photo_metadata
-
 
 
   return
