@@ -15,7 +15,7 @@ ffmpeg = require "./ffmpeg.js"
 # TODO: is selected. This occurrs every time the input size changes (ie a rotated photo)
 
 # Automatically remove temporary directory when tool is done
-temp.track()
+# temp.track()
 
 # Allowed file types
 IMG_EXT = [".jpg", ".jpeg"]
@@ -42,66 +42,65 @@ gather_metadata = (images, callback)->
           callback null, data.sort (a, b)->
             a.name > b.name
 
-# Link all files into a temp folder, using sequential naming
-# run ffmpeg command to compress a video
-archive = (root, output, metadata, options, callback)->
-  return callback null if not metadata.length
-
-  # make an index file of images
-  concat = ("file '#{f.name}'" for f in metadata).join "\n"
-  temp.open {dir: root}, (err, info)->
-    return callback err if err
-    fs.writeFile info.fd, concat, "utf8", (err)->
-      return callback err if err
-
-      # Discover orientation
-      # if metadata[0].width < metadata[0].height
-      #   # Portrait
-      #   rotate = (wid, hgt)->
-      #     wid > hgt
-      # else
-      #   # Landscape
-      #   rotate = (wid, hgt)->
-      #     wid < hgt
-
-      # Gather intel
-      max_width = 0
-      max_height = 0
-      for data in metadata
-        # Add rotational info
-        # data.rotate = rotate data.width, data.height
-
-        # Collect the maximum size of our video
-        # if data.rotate
-        #   max_width = Math.max max_width, data.height
-        #   max_height = Math.max max_height, data.width
-        # else
-          max_width = Math.max max_width, data.width
-          max_height = Math.max max_height, data.height
-
-      # Swap .mp4 with .index to make our index file
-      index_path = output.substr(0, output.length - path.extname(output).length) + ".index"
-      # Ensure index file doesn't already exist!
-      fs.access index_path, (err)->
-        return callback new Error "Index file exists: #{path.basename index_path}" if not err
-        return callback err if err and err.code != "ENOENT"
-        # Make the index file!
-        fs.writeFile index_path, JSON.stringify(metadata, null, 2), (err)->
-          if err # Problem? Cleanup!
-            return fs.unlink index_path, ()->
-              callback err
-
-          # Set our video filters
-          options.vfilter = [
-            ffmpeg.pad max_width, max_height
-            # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
-          ]
-          options.cwd = root
-          options.comment = JSON.stringify metadata # Stuff our info into metadata
-
-          # Run compression
-          ffmpeg.compress info.path, output, options, (err)->
-            callback err
+# # Taking in a concatenation file, listing inputs
+# # create a single video to compress the lot!
+# archive = (src, dest, metadata, options, callback)->
+#
+#   # make an index file of images
+#   concat = ("file '#{f.name}'" for f in metadata).join "\n"
+#   temp.open {dir: root}, (err, info)->
+#     return callback err if err
+#     fs.writeFile info.fd, concat, "utf8", (err)->
+#       return callback err if err
+#
+#       # Discover orientation
+#       # if metadata[0].width < metadata[0].height
+#       #   # Portrait
+#       #   rotate = (wid, hgt)->
+#       #     wid > hgt
+#       # else
+#       #   # Landscape
+#       #   rotate = (wid, hgt)->
+#       #     wid < hgt
+#
+#       # Gather intel
+#       max_width = 0
+#       max_height = 0
+#       for data in metadata
+#         # Add rotational info
+#         # data.rotate = rotate data.width, data.height
+#
+#         # Collect the maximum size of our video
+#         # if data.rotate
+#         #   max_width = Math.max max_width, data.height
+#         #   max_height = Math.max max_height, data.width
+#         # else
+#           max_width = Math.max max_width, data.width
+#           max_height = Math.max max_height, data.height
+#
+#       # Swap .mp4 with .index to make our index file
+#       index_path = output.substr(0, output.length - path.extname(output).length) + ".index"
+#       # Ensure index file doesn't already exist!
+#       fs.access index_path, (err)->
+#         return callback new Error "Index file exists: #{path.basename index_path}" if not err
+#         return callback err if err and err.code != "ENOENT"
+#         # Make the index file!
+#         fs.writeFile index_path, JSON.stringify(metadata, null, 2), (err)->
+#           if err # Problem? Cleanup!
+#             return fs.unlink index_path, ()->
+#               callback err
+#
+#           # Set our video filters
+#           options.vfilter = [
+#             ffmpeg.pad max_width, max_height
+#             # ffmpeg.rotate 90, (i for m, i in metadata when m.rotate)
+#           ]
+#           options.cwd = root
+#           options.comment = JSON.stringify metadata # Stuff our info into metadata
+#
+#           # Run compression
+#           ffmpeg.compress info.path, output, options, (err)->
+#             callback err
 
 # Walk paths pulling out files
 collect_files = (root, recursive, callback)->
@@ -119,7 +118,6 @@ collect_files = (root, recursive, callback)->
     fs.readdir root, (err, files)->
       return callback err if err
       callback null, (f for f in files when fs.statSync(path.join(root, f)).isFile())
-
 
 # Pack images into a video file
 module.exports = (src, dest, options = {}, callback)->
@@ -139,6 +137,7 @@ module.exports = (src, dest, options = {}, callback)->
     collect_files src, options.recursive or false, (err, files)->
       return callback err if err
       photos = (path.relative(src, f) for f in files when path.extname(f).toLowerCase() in IMG_EXT)
+      return callback null if not photos.length
 
       # Convert paths to forward slashes if on windows
       # Also remove drive letters if on windows
@@ -158,51 +157,32 @@ module.exports = (src, dest, options = {}, callback)->
             wait -= 1
             if not wait # Continue
 
-              # Store the metadata for insertion into video metadata
-              # Using node package to ensure the filenames remain in order
-              photo_metadata_json = stringify photo_metadata
-
               # Create a temporary file to list files for concatenation
               # format: file path/to/file.jpg
               temp.open {dir: src}, (err, info)->
-                console.log info
+                return callback err if err
+                concat_data = ("file \"#{p}\"" for p in photos).join("\n")
+                console.log concat_data
+                fs.writeFile info.fd, concat_data, "utf8", (err)->
+                  return callback err if err
 
-  return
+                  # Store the metadata for insertion into video metadata
+                  # Using node package to ensure the filenames remain in order
+                  photo_metadata_json = stringify photo_metadata
+                  options.metadata = {
+                    comment: photo_metadata_json
+                  }
 
+                  # Get the dimensions to use for the video.
+                  # Dimensions need to fit all images.
+                  # Add our padding argument to set the final size to this.
+                  max_dimensions = [0, 0]
+                  max_dimensions = [Math.max(max_dimensions[0], d[0]), Math.max(max_dimensions[1], d[1])] for p, d of photo_metadata
+                  options.vfilter = [
+                    ffmpeg.pad max_dimensions[0], max_dimensions[1]
+                  ]
 
-
-
-  # Quickly check our output file is accurate
-  return callback new Error "Output needs to be an mp4 file" if path.extname(dest).toLowerCase() != ".mp4"
-
-  # Check what we're using as an output.
-  fs.access dest, (err)->
-    return callback new Error "Destination file exists already." if not err
-    return callback err if err and err.code != "ENOENT"
-
-    # Determine what we're using as a source.
-    fs.stat src, (err, stats)->
-      return callback err if err # Expecting "ENOENT" if not valid path
-      if stats.isDirectory()
-        # If a directory, collect files within.
-        fs.readdir src, (err, files)->
-          # Get full path names
-          imgs = (f for f in (path.join(src, p) for p in files) when fs.statSync(f).isFile() and path.extname(f).toLowerCase() in ALLOWED_EXT)
-          gather_metadata imgs, (err, meta)->
-            return callback err if err
-            spinner = ora("Packing images.").start()
-            archive src, dest, meta, options, (err)->
-              if err then spinner.fail() else spinner.succeed()
-              callback err
-      else if stats.isFile()
-        if path.extname(src).toLowerCase() in ALLOWED_EXT
-          gather_metadata [src], (err, meta)->
-            return callback err if err
-            # Get the enclosing folder of the image
-            root = path.dirname src
-            spinner = ora("Packing image.").start()
-            archive root, dest, meta, options, (err)->
-              if err then spinner.fail() else spinner.succeed()
-              callback err
-      else
-        return callback new Error "Unrecognised input."
+                  # Archive our photos into a video! Off we go!
+                  ffmpeg.compress info.path, dest, options, (err)->
+                    callback err
+                    # DONE!

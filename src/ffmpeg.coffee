@@ -51,6 +51,7 @@ module.exports.comments = (src, options = {}, callback)->
 
 # Run a ffmpeg compression
 module.exports.compress = (src, dest, options = {}, callback)->
+  # TODO Build system to accept more types of metadata
   command = [
     "-y" # Override output
     "-f", "concat" # File type, list of files
@@ -58,7 +59,7 @@ module.exports.compress = (src, dest, options = {}, callback)->
     "-i", src
     "-crf", options.crf or 18 # Quality
     "-an" # No audio
-    "-metadata", "comment=#{options.comment or ""}"
+    "-metadata", "comment=#{options.metadata.comment}"
     "-vf", if options.vfilter then options.vfilter.join "," else "null"
     "-c:v", "libx265" # Compression method
     dest
