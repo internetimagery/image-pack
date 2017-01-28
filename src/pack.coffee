@@ -117,9 +117,9 @@ collect_files = (root, recursive, callback)->
   else
     fs.readdir root, (err, files)->
       return callback err if err
-      callback null, (f for f in files when fs.statSync(path.join(root, f)).isFile())
+      callback null, (path.join(root, f) for f in files when fs.statSync(path.join(root, f)).isFile())
 
-# Pack images into a video file
+# Pack images into a vid  eo file
 module.exports = (src, dest, options = {}, callback)->
   options.cwd = src # Working from the source dir
 
@@ -159,10 +159,9 @@ module.exports = (src, dest, options = {}, callback)->
 
               # Create a temporary file to list files for concatenation
               # format: file path/to/file.jpg
-              temp.open {dir: src}, (err, info)->
+              temp.open {dir: src, suffix: ".ffcat"}, (err, info)->
                 return callback err if err
-                concat_data = ("file \"#{p}\"" for p in photos).join("\n")
-                console.log concat_data
+                concat_data = ("file #{p.replace /([^\w])/g, "\\$1"}" for p in photos).join("\n")
                 fs.writeFile info.fd, concat_data, "utf8", (err)->
                   return callback err if err
 

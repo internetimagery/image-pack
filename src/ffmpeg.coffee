@@ -34,7 +34,7 @@ module.exports.dimensions = (src, options={}, callback)->
     meta = dimensions_extract.exec err.message
     if meta?
       return callback null, meta[0].split "x"
-    callback new Error "Bad file: #{img}"
+    callback new Error "Bad file: #{src}"
 
 # Get the comments metadata from a file, if any
 module.exports.comments = (src, options = {}, callback)->
