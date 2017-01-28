@@ -29,8 +29,8 @@ module.exports.pad = (width, height)->
 
 # Get dimensions from an image / video
 dimensions_extract = /\d{2,}x\d{2,}/
-module.exports.dimensions = (src, callback)->
-  child_process.execFile ffmpeg.path, ["-i", src], (err)->
+module.exports.dimensions = (src, options={}, callback)->
+  child_process.execFile ffmpeg.path, ["-i", src], {cwd: options.cwd or process.cwd()}, (err)->
     meta = dimensions_extract.exec err.message
     if meta?
       return callback null, meta[0].split "x"

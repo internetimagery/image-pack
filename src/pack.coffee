@@ -8,6 +8,7 @@ fs = require 'fs'
 temp = require 'temp'
 ora = require 'ora'
 walk = require 'walk'
+stringify = require 'json-stable-stringify'
 ffmpeg = require "./ffmpeg.js"
 
 # TODO: Rotating photos to conserve space resets frame count every time a new stream
@@ -122,6 +123,7 @@ collect_files = (root, recursive, callback)->
 
 # Pack images into a video file
 module.exports = (src, dest, options = {}, callback)->
+  options.cwd = src # Working from the source dir
 
   # Ensure src is a directory, and exists.
   # Ensure dest is a mp4 file, and does not exist.
@@ -143,7 +145,22 @@ module.exports = (src, dest, options = {}, callback)->
       photos = (p.replace /\\/g, "/" for p in photos)
       photos = (p.replace /^\w:/, "" for p in photos)
 
-      console.log photos
+      # Grab image dimensions and store them in a format:
+      # [{FILENAME: [WIDTH, HEIGHT]}]
+      photo_metadata = {}
+      wait = photos.length # Wait for processes
+      for photo in photos
+        do (photo)->
+          ffmpeg.dimensions photo, options, (err, dimensions)->
+            return callback err if err
+            photo_metadata[photo] = dimensions
+
+            wait -= 1
+            if not wait # Continue
+
+              # Store the metadata for insertion into video later
+              # Using node package to ensure the filenames remain in order
+              photo_metadata_json = stringify photo_metadata
 
 
 
