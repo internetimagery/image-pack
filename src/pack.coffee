@@ -158,10 +158,14 @@ module.exports = (src, dest, options = {}, callback)->
             wait -= 1
             if not wait # Continue
 
-              # Store the metadata for insertion into video later
+              # Store the metadata for insertion into video metadata
               # Using node package to ensure the filenames remain in order
               photo_metadata_json = stringify photo_metadata
 
+              # Create a temporary file to list files for concatenation
+              # format: file path/to/file.jpg
+              temp.open {dir: src}, (err, info)->
+                console.log info
 
   return
 
