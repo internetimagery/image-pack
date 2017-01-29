@@ -80,9 +80,9 @@ module.exports.extract = (src, dest, options={}, callback)->
     when ".jpeg" then ["-qmin", 1, "-qmax", 1, "-qscale", 1, dest]
     else [dest]
   command = input.concat filter.concat output
-  # # console.log "Running command: ffmpeg", command.join " "
+  # console.log "Running command: ffmpeg", command.join " "
   child_process.execFile ffmpeg.path, command, {cwd: options.cwd or process.cwd()}, (err, stdout)->
-    callback err
+    callback err, stdout
 
 # Crop an image down. Remove the black bars!
 module.exports.crop = (src, dest, width, height, options = {}, callback)->

@@ -4,7 +4,7 @@
 
 # Pack images into a video file!
 path = require 'path'
-fs = require 'fs'
+fs = require 'fs-extra'
 temp = require 'temp'
 ora = require 'ora'
 walk = require 'walk'
@@ -39,8 +39,7 @@ gather_metadata = (images, callback)->
         wait -= 1
         if not wait # We have checked everything
           # Sort the files in order
-          callback null, data.sort (a, b)->
-            a.name > b.name
+          callback null, data
 
 # Walk paths pulling out files
 collect_files = (root, recursive, callback)->
@@ -65,9 +64,8 @@ module.exports = (src, dest, options = {}, callback)->
 
   # Ensure src is a directory, and exists.
   # Ensure dest is a mp4 file, and does not exist.
-  fs.stat src, (err, stats)->
+  fs.ensureDir src, (err)->
     return callback err if err
-    return callback new Error "Source needs to be a Directory." if not stats.isDirectory()
     return callback new Error "Destination already exists." if fs.existsSync dest
     return callback new Error "Destination needs to be a video file of format: " + VID_EXT.join " " if path.extname(dest).toLowerCase() not in VID_EXT
 
@@ -88,7 +86,7 @@ module.exports = (src, dest, options = {}, callback)->
       # [{FILENAME: [WIDTH, HEIGHT]}]
       photo_metadata = {}
       wait = photos.length # Wait for processes
-      for photo in photos
+      for photo in photos.sort()
         do (photo)->
           ffmpeg.dimensions photo, options, (err, dimensions)->
             return callback err if err
@@ -102,7 +100,6 @@ module.exports = (src, dest, options = {}, callback)->
               temp.open {dir: src, suffix: ".ffcat"}, (err, info)->
                 return callback err if err
                 concat_data = ("file #{p.replace /([^\w])/g, "\\$1"}" for p in photos).join("\n")
-                console.log concat_data
                 fs.writeFile info.fd, concat_data, "utf8", (err)->
                   return callback err if err
 
