@@ -67,9 +67,13 @@ module.exports = (src, dest, options, callback)->
                 do (f)->
                   fs.ensureDir path.dirname(f[1]), (err)->
                     return callback err if err
-                    options.vfilter = {
-                      crop: [index_data_absolute[f[1]][0],index_data_absolute[f[1]][1],0,0].join ":"
-                    }
+                    options.vfilter =
+                      crop:
+                        w: index_data_absolute[f[1]][0]
+                        h: index_data_absolute[f[1]][1]
+                        x: 0
+                        y: 0
+
                     ffmpeg.extract f[0], f[1], options, (err)->
                       return callback err if err
                       wait -= 1

@@ -115,9 +115,10 @@ module.exports = (src, dest, options = {}, callback)->
                   # Add our padding argument to set the final size to this.
                   max_dimensions = [0, 0]
                   max_dimensions = [Math.max(max_dimensions[0], d[0]), Math.max(max_dimensions[1], d[1])] for p, d of photo_metadata
-                  options.vfilter = [
-                    ffmpeg.pad max_dimensions[0], max_dimensions[1]
-                  ]
+                  options.vfilter =
+                    pad:
+                      w: max_dimensions[0]
+                      h: max_dimensions[1]
 
                   # Archive our photos into a video! Off we go!
                   ffmpeg.compress info.path, dest, options, (err)->
