@@ -1,9 +1,11 @@
 (function() {
-  var argparse, args, cwd, data, output, pack, parser, path, source, unpack;
+  var argparse, args, cwd, data, ora, output, pack, parser, path, source, spinner, unpack;
 
   argparse = require('argparse');
 
   path = require('path');
+
+  ora = require('ora');
 
   pack = require("./pack.js");
 
@@ -38,6 +40,11 @@
     help: "Quality of output. Lower number is higher quality."
   });
 
+  parser.addArgument(["-r", "--recursive"], {
+    action: "storeTrue",
+    help: "Decend into subdirectories when collecting images to pack."
+  });
+
   args = parser.parseArgs();
 
   cwd = process.cwd();
@@ -48,16 +55,29 @@
 
   switch (args.Method) {
     case "pack":
+      spinner = ora("Packing images.");
       pack(source, output, {
-        crf: args.quality
+        crf: args.quality,
+        recursive: args.recursive
       }, function(err) {
+        if (err) {
+          spinner.fail();
+        } else {
+          spinner.succeed();
+        }
         if (err) {
           return console.error(err);
         }
       });
       break;
     case "unpack":
+      spinner = ora("Unpacking images.");
       unpack(source, output, {}, function(err) {
+        if (err) {
+          spinner.fail();
+        } else {
+          spinner.succeed();
+        }
         if (err) {
           return console.error(err);
         }

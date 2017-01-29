@@ -1,22 +1,26 @@
 (function() {
-  var ALLOWED_EXT, archive, child_process, ffmpeg, fs, gather_metadata, ora, path, temp,
+  var IMG_EXT, VID_EXT, collect_files, ffmpeg, fs, gather_metadata, ora, path, stringify, temp, walk,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   path = require('path');
 
-  fs = require('fs');
+  fs = require('fs-extra');
 
   temp = require('temp');
 
-  child_process = require('child_process');
-
   ora = require('ora');
+
+  walk = require('walk');
+
+  stringify = require('json-stable-stringify');
 
   ffmpeg = require("./ffmpeg.js");
 
   temp.track();
 
-  ALLOWED_EXT = [".jpg", ".jpeg"];
+  IMG_EXT = [".jpg", ".jpeg"];
+
+  VID_EXT = [".mp4"];
 
   gather_metadata = function(images, callback) {
     var data, i, img, len, results, wait;
@@ -38,9 +42,7 @@
           }
           wait -= 1;
           if (!wait) {
-            return callback(null, data.sort(function(a, b) {
-              return a.name > b.name;
-            }));
+            return callback(null, data);
           }
         });
       })(img));
@@ -48,145 +50,153 @@
     return results;
   };
 
-  archive = function(root, output, metadata, options, callback) {
-    var concat, f;
-    if (!metadata.length) {
-      return callback(null);
-    }
-    concat = ((function() {
-      var i, len, results;
-      results = [];
-      for (i = 0, len = metadata.length; i < len; i++) {
-        f = metadata[i];
-        results.push("file '" + f.name + "'");
-      }
-      return results;
-    })()).join("\n");
-    return temp.open({
-      dir: root
-    }, function(err, info) {
-      if (err) {
-        return callback(err);
-      }
-      return fs.writeFile(info.fd, concat, "utf8", function(err) {
-        var data, i, index_path, len, max_height, max_width;
+  collect_files = function(root, recursive, callback) {
+    var files;
+    if (recursive) {
+      files = [];
+      return walk.walk(root).on("file", function(root, stat, next) {
+        files.push(path.join(root, stat.name));
+        return next();
+      }).on("errors", function(root, stats, next) {
+        return callback(stats);
+      }).on("end", function() {
+        return callback(null, files);
+      });
+    } else {
+      return fs.readdir(root, function(err, files) {
+        var f;
         if (err) {
           return callback(err);
         }
-        max_width = 0;
-        max_height = 0;
-        for (i = 0, len = metadata.length; i < len; i++) {
-          data = metadata[i];
-          max_width = Math.max(max_width, data.width);
-          max_height = Math.max(max_height, data.height);
-        }
-        index_path = output.substr(0, output.length - path.extname(output).length) + ".index";
-        return fs.access(index_path, function(err) {
-          if (!err) {
-            return callback(new Error("Index file exists: " + (path.basename(index_path))));
-          }
-          if (err && err.code !== "ENOENT") {
-            return callback(err);
-          }
-          return fs.writeFile(index_path, JSON.stringify(metadata, null, 2), function(err) {
-            if (err) {
-              return fs.unlink(index_path, function() {
-                return callback(err);
-              });
+        return callback(null, (function() {
+          var i, len, results;
+          results = [];
+          for (i = 0, len = files.length; i < len; i++) {
+            f = files[i];
+            if (fs.statSync(path.join(root, f)).isFile()) {
+              results.push(path.join(root, f));
             }
-            options.vfilter = [ffmpeg.pad(max_width, max_height)];
-            options.cwd = root;
-            options.comment = JSON.stringify(metadata);
-            return ffmpeg.compress(info.path, output, options, function(err) {
-              return callback(err);
-            });
-          });
-        });
+          }
+          return results;
+        })());
       });
-    });
+    }
   };
 
   module.exports = function(src, dest, options, callback) {
     if (options == null) {
       options = {};
     }
-    options.crf = options.crf || 18;
-    if (path.extname(dest).toLowerCase() !== ".mp4") {
-      return callback(new Error("Output needs to be an mp4 file"));
-    }
-    return fs.access(dest, function(err) {
-      if (!err) {
-        return callback(new Error("Destination file exists already."));
-      }
-      if (err && err.code !== "ENOENT") {
+    options.cwd = src;
+    return fs.ensureDir(src, function(err) {
+      var ref;
+      if (err) {
         return callback(err);
       }
-      return fs.stat(src, function(err, stats) {
-        var ref;
+      if (fs.existsSync(dest)) {
+        return callback(new Error("Destination already exists."));
+      }
+      if (ref = path.extname(dest).toLowerCase(), indexOf.call(VID_EXT, ref) < 0) {
+        return callback(new Error("Destination needs to be a video file of format: " + VID_EXT.join(" ")));
+      }
+      return collect_files(src, options.recursive || false, function(err, files) {
+        var f, i, len, p, photo, photo_metadata, photos, ref1, results, wait;
         if (err) {
           return callback(err);
         }
-        if (stats.isDirectory()) {
-          return fs.readdir(src, function(err, files) {
-            var f, imgs, p;
-            imgs = (function() {
-              var i, len, ref, ref1, results;
-              ref = (function() {
-                var j, len, results1;
-                results1 = [];
-                for (j = 0, len = files.length; j < len; j++) {
-                  p = files[j];
-                  results1.push(path.join(src, p));
-                }
-                return results1;
-              })();
-              results = [];
-              for (i = 0, len = ref.length; i < len; i++) {
-                f = ref[i];
-                if (fs.statSync(f).isFile() && (ref1 = path.extname(f).toLowerCase(), indexOf.call(ALLOWED_EXT, ref1) >= 0)) {
-                  results.push(f);
-                }
-              }
-              return results;
-            })();
-            return gather_metadata(imgs, function(err, meta) {
-              var spinner;
-              if (err) {
-                return callback(err);
-              }
-              spinner = ora("Packing images.").start();
-              return archive(src, dest, meta, options, function(err) {
-                if (err) {
-                  spinner.fail();
-                } else {
-                  spinner.succeed();
-                }
-                return callback(err);
-              });
-            });
-          });
-        } else if (stats.isFile()) {
-          if (ref = path.extname(src).toLowerCase(), indexOf.call(ALLOWED_EXT, ref) >= 0) {
-            return gather_metadata([src], function(err, meta) {
-              var root, spinner;
-              if (err) {
-                return callback(err);
-              }
-              root = path.dirname(src);
-              spinner = ora("Packing image.").start();
-              return archive(root, dest, meta, options, function(err) {
-                if (err) {
-                  spinner.fail();
-                } else {
-                  spinner.succeed();
-                }
-                return callback(err);
-              });
-            });
+        photos = (function() {
+          var i, len, ref1, results;
+          results = [];
+          for (i = 0, len = files.length; i < len; i++) {
+            f = files[i];
+            if (ref1 = path.extname(f).toLowerCase(), indexOf.call(IMG_EXT, ref1) >= 0) {
+              results.push(path.relative(src, f));
+            }
           }
-        } else {
-          return callback(new Error("Unrecognised input."));
+          return results;
+        })();
+        if (!photos.length) {
+          return callback(null);
         }
+        photos = (function() {
+          var i, len, results;
+          results = [];
+          for (i = 0, len = photos.length; i < len; i++) {
+            p = photos[i];
+            results.push(p.replace(/\\/g, "/"));
+          }
+          return results;
+        })();
+        photos = (function() {
+          var i, len, results;
+          results = [];
+          for (i = 0, len = photos.length; i < len; i++) {
+            p = photos[i];
+            results.push(p.replace(/^\w:/, ""));
+          }
+          return results;
+        })();
+        photo_metadata = {};
+        wait = photos.length;
+        ref1 = photos.sort();
+        results = [];
+        for (i = 0, len = ref1.length; i < len; i++) {
+          photo = ref1[i];
+          results.push((function(photo) {
+            return ffmpeg.dimensions(photo, options, function(err, dimensions) {
+              if (err) {
+                return callback(err);
+              }
+              photo_metadata[photo] = dimensions;
+              wait -= 1;
+              if (!wait) {
+                return temp.open({
+                  dir: src,
+                  suffix: ".ffcat"
+                }, function(err, info) {
+                  var concat_data;
+                  if (err) {
+                    return callback(err);
+                  }
+                  concat_data = ((function() {
+                    var j, len1, results1;
+                    results1 = [];
+                    for (j = 0, len1 = photos.length; j < len1; j++) {
+                      p = photos[j];
+                      results1.push("file " + (p.replace(/([^\w])/g, "\\$1")));
+                    }
+                    return results1;
+                  })()).join("\n");
+                  return fs.writeFile(info.fd, concat_data, "utf8", function(err) {
+                    var d, max_dimensions, photo_metadata_json;
+                    if (err) {
+                      return callback(err);
+                    }
+                    photo_metadata_json = stringify(photo_metadata);
+                    options.metadata = {
+                      comment: photo_metadata_json
+                    };
+                    max_dimensions = [0, 0];
+                    for (p in photo_metadata) {
+                      d = photo_metadata[p];
+                      max_dimensions = [Math.max(max_dimensions[0], d[0]), Math.max(max_dimensions[1], d[1])];
+                    }
+                    options.vfilter = {
+                      pad: {
+                        w: max_dimensions[0],
+                        h: max_dimensions[1]
+                      }
+                    };
+                    return ffmpeg.compress(info.path, dest, options, function(err) {
+                      return callback(err);
+                    });
+                  });
+                });
+              }
+            });
+          })(photo));
+        }
+        return results;
       });
     });
   };

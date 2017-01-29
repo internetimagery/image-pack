@@ -1,9 +1,38 @@
 (function() {
-  var child_process, dimensions_extract, ffmpeg, frame_expression;
+  var child_process, dimensions_extract, ffmpeg, filter_generate, frame_expression, ini, path;
+
+  ini = require('ini');
+
+  path = require('path');
 
   ffmpeg = require("ffmpeg-static");
 
   child_process = require('child_process');
+
+  filter_generate = function(filters) {
+    var args, expression, key, name, val;
+    if (!filters) {
+      return [];
+    }
+    expression = ((function() {
+      var results;
+      results = [];
+      for (name in filters) {
+        args = filters[name];
+        results.push(name + "='" + (((function() {
+          var results1;
+          results1 = [];
+          for (key in args) {
+            val = args[key];
+            results1.push(key + "=" + val);
+          }
+          return results1;
+        })()).join(":")) + "'");
+      }
+      return results;
+    })()).join(",");
+    return ["-vf", expression];
+  };
 
   frame_expression = function(frames, command) {
     var f, frame_cmd, run_cmd;
@@ -30,24 +59,25 @@
     return "rotate='" + (frame_expression(frames || [], rotate_cmd)) + "'";
   };
 
-  module.exports.pad = function(width, height) {
-    return "pad='w=" + width + ":h=" + height + "'";
-  };
-
   dimensions_extract = /\d{2,}x\d{2,}/;
 
-  module.exports.dimensions = function(src, callback) {
-    return child_process.execFile(ffmpeg.path, ["-i", src], function(err) {
+  module.exports.dimensions = function(src, options, callback) {
+    if (options == null) {
+      options = {};
+    }
+    return child_process.execFile(ffmpeg.path, ["-i", src], {
+      cwd: options.cwd || process.cwd()
+    }, function(err) {
       var meta;
       meta = dimensions_extract.exec(err.message);
       if (meta != null) {
         return callback(null, meta[0].split("x"));
       }
-      return callback(new Error("Bad file: " + img));
+      return callback(new Error("Bad file: " + src));
     });
   };
 
-  module.exports.comments = function(src, options, callback) {
+  module.exports.metadata = function(src, options, callback) {
     var command;
     if (options == null) {
       options = {};
@@ -56,26 +86,24 @@
     return child_process.execFile(ffmpeg.path, command, {
       cwd: options.cwd || process.cwd()
     }, function(err, stdout) {
-      var scan;
       if (err) {
         return callback(err);
       }
-      try {
-        scan = /comment=(.+?)\n/.exec(stdout);
-        return callback(null, JSON.parse(scan[2]));
-      } catch (error) {
-        err = error;
-        return callback(err);
-      }
+      return callback(null, ini.parse(stdout));
     });
   };
 
   module.exports.compress = function(src, dest, options, callback) {
-    var command;
+    var command, filters, input, metadata, opts, output;
     if (options == null) {
       options = {};
     }
-    command = ["-y", "-f", "concat", "-safe", 0, "-i", src, "-crf", options.crf || 18, "-an", "-metadata", "comment=" + (options.comment || ""), "-vf", options.vfilter ? options.vfilter.join(",") : "null", "-c:v", "libx265", dest];
+    input = ["-y", "-f", "concat", "-safe", 0, "-i", src];
+    filters = filter_generate(options.vfilter);
+    opts = ["-crf", options.crf || 18, "-an", "-c:v", "libx265"];
+    metadata = ["-metadata", "comment=" + options.metadata.comment];
+    output = [dest];
+    command = input.concat(filters.concat(opts.concat(metadata.concat(output))));
     return child_process.execFile(ffmpeg.path, command, {
       cwd: options.cwd || process.cwd()
     }, function(err, stdout) {
@@ -84,28 +112,27 @@
   };
 
   module.exports.extract = function(src, dest, options, callback) {
-    var command;
+    var command, filters, input, output;
     if (options == null) {
       options = {};
     }
-    command = ["-y", "-i", src, dest];
+    input = ["-y", "-i", src];
+    filters = filter_generate(options.vfilter);
+    output = (function() {
+      switch (path.extname(dest).toLowerCase()) {
+        case ".jpg":
+          return ["-qmin", 1, "-qmax", 1, "-qscale", 1, dest];
+        case ".jpeg":
+          return ["-qmin", 1, "-qmax", 1, "-qscale", 1, dest];
+        default:
+          return [dest];
+      }
+    })();
+    command = input.concat(filters.concat(output));
     return child_process.execFile(ffmpeg.path, command, {
       cwd: options.cwd || process.cwd()
     }, function(err, stdout) {
-      return callback(err);
-    });
-  };
-
-  module.exports.crop = function(src, dest, width, height, options, callback) {
-    var command;
-    if (options == null) {
-      options = {};
-    }
-    command = ["-y", "-i", src, "-vf", "crop='" + width + ":" + height + ":0:0'", "-qmin", 1, "-qmax", 1, "-qscale", 1, dest];
-    return child_process.execFile(ffmpeg.path, command, {
-      cwd: options.cwd || process.cwd()
-    }, function(err) {
-      return callback(err);
+      return callback(err, stdout);
     });
   };
 
