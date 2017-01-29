@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/internetimagery/image-pack.git"
+    "url": "git+https://github.com/internetimagery/photopack.git"
   },
   "author": "Jason Dixon",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/internetimagery/image-pack/issues"
+    "url": "https://github.com/internetimagery/photopack/issues"
   },
-  "homepage": "https://github.com/internetimagery/image-pack#readme",
+  "homepage": "https://github.com/internetimagery/photopack#readme",
   "dependencies": {
     "argparse": "^1.0.9",
     "ffmpeg-static": "^2.0.0",
