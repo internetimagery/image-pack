@@ -58,14 +58,15 @@ collect_files = (root, recursive, callback)->
       return callback err if err
       callback null, (path.join(root, f) for f in files when fs.statSync(path.join(root, f)).isFile())
 
-# Pack images into a vid  eo file
+# Pack images into a video file
 module.exports = (src, dest, options = {}, callback)->
   options.cwd = src # Working from the source dir
 
   # Ensure src is a directory, and exists.
   # Ensure dest is a mp4 file, and does not exist.
-  fs.ensureDir src, (err)->
+  fs.stat src, (err, stats)->
     return callback err if err
+    return callback new Error "Source needs to be a Directory" if not stats.isDirectory()
     return callback new Error "Destination already exists." if fs.existsSync dest
     return callback new Error "Destination needs to be a video file of format: " + VID_EXT.join " " if path.extname(dest).toLowerCase() not in VID_EXT
 
