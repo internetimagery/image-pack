@@ -15,16 +15,17 @@ npm install photopack -g
 ### Usage
 
 ```
-photopack [pack|unpack] Source Destination
+photopack [options] {pack|unpack} <source> <destination>
 ```
 
 ####Pack
 
-Pack command accepts a folder or an image as source. If a folder, it grabs all jpegs in the folder. It then packs them into a "mp4" file, provided as the destination (and creates a corresponding .index file).
+Pack command accepts a folder full of photos as a source. It then packs them into a "mp4" file, provided as the destination.
+The optional -r (recursive) will descend into subfolders from the source looking for images also.
 
 ####Unpack
 
-Unpack command accepts an mp4 file as input. If a .index file of the same name is in the same folder it'll be used for image metadata. It then extracts all images into the provided folder destination.
+Unpack command accepts an mp4 file as input. It then extracts all images into the provided folder destination.
 
 ### Compile Project
 
