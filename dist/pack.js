@@ -88,10 +88,13 @@
       options = {};
     }
     options.cwd = src;
-    return fs.ensureDir(src, function(err) {
+    return fs.stat(src, function(err, stats) {
       var ref;
       if (err) {
         return callback(err);
+      }
+      if (!stats.isDirectory()) {
+        return callback(new Error("Source needs to be a Directory"));
       }
       if (fs.existsSync(dest)) {
         return callback(new Error("Destination already exists."));

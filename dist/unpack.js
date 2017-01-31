@@ -47,102 +47,107 @@
 
   module.exports = function(src, dest, options, callback) {
     options.cwd = dest;
-    return fs.ensureDir(dest, function(err) {
+    return fs.stat(src, function(err, stat) {
       var ref;
       if (err) {
         return callback(err);
       }
-      if (ref = path.extname(src).toLowerCase(), indexOf.call(VID_EXT, ref) < 0) {
-        return callback(new Error("Source needs to be a video of format: " + VID_EXT.join(" ")));
+      if (!stats.isFile() || (ref = path.extname(src).toLowerCase(), indexOf.call(VID_EXT, ref) < 0)) {
+        return callback(new Error("Source needs to be a video of format: " + (VID_EXT.join())));
       }
-      return ffmpeg.metadata(src, options, function(err, metadata) {
-        var index_data, index_data_absolute, k, v;
+      return fs.ensureDir(dest, function(err) {
         if (err) {
           return callback(err);
         }
-        try {
-          index_data = JSON.parse(metadata.comment);
-          index_data_absolute = new function() {
-            var k, v;
-            for (k in index_data) {
-              v = index_data[k];
-              this[path.join(dest, k)] = v;
-            }
-            return this;
-          };
-          for (k in index_data_absolute) {
-            v = index_data_absolute[k];
-            if (fs.existsSync(k)) {
-              return callback(new Error("File already exists: " + k));
-            }
+        return ffmpeg.metadata(src, options, function(err, metadata) {
+          var index_data, index_data_absolute, k, v;
+          if (err) {
+            return callback(err);
           }
-          return temp.mkdir({
-            dir: dest
-          }, function(err, working) {
-            if (err) {
-              return callback(err);
+          try {
+            index_data = JSON.parse(metadata.comment);
+            index_data_absolute = new function() {
+              var k, v;
+              for (k in index_data) {
+                v = index_data[k];
+                this[path.join(dest, k)] = v;
+              }
+              return this;
+            };
+            for (k in index_data_absolute) {
+              v = index_data_absolute[k];
+              if (fs.existsSync(k)) {
+                return callback(new Error("File already exists: " + k));
+              }
             }
-            options.cwd = working;
-            return ffmpeg.extract(src, "%9d.bmp", options, function(err) {
+            return temp.mkdir({
+              dir: dest
+            }, function(err, working) {
               if (err) {
                 return callback(err);
               }
-              return fs.readdir(working, function(err, files) {
-                var f, j, len, ref1, results, wait;
+              options.cwd = working;
+              return ffmpeg.extract(src, "%9d.bmp", options, function(err) {
                 if (err) {
                   return callback(err);
                 }
-                wait = files.length;
-                ref1 = zip(files, (function() {
-                  var results1;
-                  results1 = [];
-                  for (k in index_data_absolute) {
-                    v = index_data_absolute[k];
-                    results1.push(k);
+                return fs.readdir(working, function(err, files) {
+                  var f, j, len, ref1, results, wait;
+                  if (err) {
+                    return callback(err);
                   }
-                  return results1;
-                })());
-                results = [];
-                for (j = 0, len = ref1.length; j < len; j++) {
-                  f = ref1[j];
-                  results.push((function(f) {
-                    return fs.ensureDir(path.dirname(f[1]), function(err) {
-                      if (err) {
-                        return callback(err);
-                      }
-                      options.vfilter = {
-                        crop: {
-                          w: index_data_absolute[f[1]][0],
-                          h: index_data_absolute[f[1]][1],
-                          x: 0,
-                          y: 0
-                        }
-                      };
-                      return ffmpeg.extract(f[0], f[1], options, function(err) {
+                  wait = files.length;
+                  ref1 = zip(files, (function() {
+                    var results1;
+                    results1 = [];
+                    for (k in index_data_absolute) {
+                      v = index_data_absolute[k];
+                      results1.push(k);
+                    }
+                    return results1;
+                  })());
+                  results = [];
+                  for (j = 0, len = ref1.length; j < len; j++) {
+                    f = ref1[j];
+                    results.push((function(f) {
+                      return fs.ensureDir(path.dirname(f[1]), function(err) {
                         if (err) {
                           return callback(err);
                         }
-                        wait -= 1;
-                        if (!wait) {
-                          return callback(null);
-                        }
+                        options.vfilter = {
+                          crop: {
+                            w: index_data_absolute[f[1]][0],
+                            h: index_data_absolute[f[1]][1],
+                            x: 0,
+                            y: 0
+                          }
+                        };
+                        return ffmpeg.extract(f[0], f[1], options, function(err) {
+                          if (err) {
+                            return callback(err);
+                          }
+                          wait -= 1;
+                          if (!wait) {
+                            return callback(null);
+                          }
+                        });
                       });
-                    });
-                  })(f));
-                }
-                return results;
+                    })(f));
+                  }
+                  return results;
+                });
               });
             });
-          });
-        } catch (error) {
-          err = error;
-          if (err.name !== "SyntaxError") {
-            return callback(err);
+          } catch (error) {
+            err = error;
+            if (err.name !== "SyntaxError") {
+              return callback(err);
+            }
+            return ffmpeg.extract(src, "%9d.jpg", options, function(err) {
+              return callback(err);
+            });
           }
-          return ffmpeg.extract(src, "%9d.jpg", options, function(err) {
-            return callback(err);
-          });
-        }
+        });
       });
     });
   };
