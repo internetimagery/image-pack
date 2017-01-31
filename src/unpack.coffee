@@ -27,7 +27,7 @@ module.exports = (src, dest, options, callback)->
 
   # Check our destination is a folder, and exists.
   # Check source exists also and is allowed format.
-  fs.stat src, (err, stat)->
+  fs.stat src, (err, stats)->
     return callback err if err
     return callback new Error "Source needs to be a video of format: #{VID_EXT.join()}" if not stats.isFile() or path.extname(src).toLowerCase() not in VID_EXT
     fs.ensureDir dest, (err)->
