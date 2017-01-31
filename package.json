@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Sorry: no test specified :(\" && exit 1",
-    "build": "gulp"
+    "build": "gulp",
+    "publish": "gulp && npm publish"
   },
   "bin": {
     "photopack": "./bin/photopack"

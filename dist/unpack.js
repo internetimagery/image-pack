@@ -47,7 +47,7 @@
 
   module.exports = function(src, dest, options, callback) {
     options.cwd = dest;
-    return fs.stat(src, function(err, stat) {
+    return fs.stat(src, function(err, stats) {
       var ref;
       if (err) {
         return callback(err);
